@@ -18,6 +18,9 @@ const statusEl = document.getElementById("status");
 const startPanel = document.getElementById("start");
 const pickBtn = document.getElementById("pickBtn");
 const fileInput = document.getElementById("fileInput");
+const meters = document.getElementById("meters");
+const speedMeter = document.getElementById("speedMeter");
+const fpsMeter = document.getElementById("fpsMeter");
 
 async function loadSettings() {
   try {
@@ -76,6 +79,9 @@ async function init() {
   const overlay = new MappingOverlay(video.videoElement, settings);
 
   function updateStatus(state) {
+    if (typeof state.speedPercent === "number") {
+      speedMeter.textContent = `${state.speedPercent}%`;
+    }
     if (!state.total) {
       statusEl.textContent = "No video loaded";
       return;
@@ -98,6 +104,7 @@ async function init() {
       startPanel.hidden = true;
       startPanel.style.display = "none";
       hud.hidden = false;
+      meters.hidden = false;
       canvas.style.cursor = "grab";
     }
   }
@@ -125,6 +132,14 @@ async function init() {
       case "ArrowLeft":
         video.previous();
         break;
+      case "ArrowUp":
+        e.preventDefault();
+        video.changeSpeed(+1);
+        break;
+      case "ArrowDown":
+        e.preventDefault();
+        video.changeSpeed(-1);
+        break;
       case "Enter":
         overlay.toggle();
         break;
@@ -146,11 +161,21 @@ async function init() {
 
   // --- Render loop ------------------------------------------------------
   const clock = new THREE.Clock();
+  let fpsAccum = 0;
   function animate() {
     const dt = clock.getDelta();
     controls.update(dt);
     overlay.render();
     renderer.render(scene, camera);
+
+    // Show the video's effective playback frame rate (refreshed ~4x/second).
+    fpsAccum += dt;
+    if (fpsAccum >= 0.25) {
+      fpsAccum = 0;
+      const vf = video.videoFps;
+      fpsMeter.textContent = vf > 0 ? `${Math.round(vf)} FPS` : "-- FPS";
+    }
+
     requestAnimationFrame(animate);
   }
   animate();

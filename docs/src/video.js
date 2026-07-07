@@ -8,6 +8,10 @@
 
 import * as THREE from "three";
 
+// Playback-speed limits (percent). Browsers reliably support ~6%–1600%.
+const MIN_SPEED_PERCENT = 6;
+const MAX_SPEED_PERCENT = 400;
+
 export class VideoManager {
   /**
    * @param {(state: {name: string, index: number, total: number,
@@ -20,6 +24,7 @@ export class VideoManager {
     this._clips = [];
     this._index = 0;
     this._playing = false;
+    this._speedPercent = 100; // 100% = normal playback speed.
 
     this._video = document.createElement("video");
     this._video.muted = true; // Required for programmatic autoplay.
@@ -35,6 +40,50 @@ export class VideoManager {
     this._texture.generateMipmaps = false;
     this._texture.wrapS = THREE.ClampToEdgeWrapping;
     this._texture.wrapT = THREE.ClampToEdgeWrapping;
+
+    // Effective playback frame rate of the video itself (presented frames per
+    // real second), which scales with playback speed. 0 while paused/stopped.
+    this._videoFps = 0;
+    this._video.addEventListener("pause", () => {
+      this._videoFps = 0;
+    });
+    this._video.addEventListener("ended", () => {
+      this._videoFps = 0;
+    });
+    this._startFrameRateTracking();
+  }
+
+  /**
+   * Measures the video's real presented-frame rate via
+   * requestVideoFrameCallback. Each callback corresponds to one displayed video
+   * frame, so counting them over wall-clock time yields the effective FPS —
+   * which rises and falls with the playback speed.
+   */
+  _startFrameRateTracking() {
+    if (typeof this._video.requestVideoFrameCallback !== "function") {
+      return; // Unsupported browser; FPS stays 0 (readout shows "--").
+    }
+    let windowStart = 0;
+    let frames = 0;
+    const onFrame = (now) => {
+      frames += 1;
+      if (!windowStart) {
+        windowStart = now;
+      }
+      const elapsed = now - windowStart;
+      if (elapsed >= 500) {
+        this._videoFps = (frames * 1000) / elapsed;
+        frames = 0;
+        windowStart = now;
+      }
+      this._video.requestVideoFrameCallback(onFrame);
+    };
+    this._video.requestVideoFrameCallback(onFrame);
+  }
+
+  /** @returns {number} Effective video frame rate (fps); 0 when not playing. */
+  get videoFps() {
+    return this._videoFps;
   }
 
   /** @returns {THREE.VideoTexture} The shared, auto-updating texture. */
@@ -82,6 +131,7 @@ export class VideoManager {
     const count = this._clips.length;
     this._index = ((index % count) + count) % count;
     this._video.src = this._clips[this._index].url;
+    this._applySpeed(); // Loading media can reset the rate; re-assert it.
     const start = this._video.play();
     if (start && typeof start.catch === "function") {
       start.catch(() => {
@@ -127,6 +177,30 @@ export class VideoManager {
     this._emit();
   }
 
+  /**
+   * Adjusts playback speed by a whole-percent delta (100% = normal), clamped
+   * to a browser-supported range.
+   *
+   * @param {number} deltaPercent Signed change in percent (e.g. +1 or -1).
+   */
+  changeSpeed(deltaPercent) {
+    const next = Math.round(this._speedPercent + deltaPercent);
+    this._speedPercent = Math.max(MIN_SPEED_PERCENT, Math.min(MAX_SPEED_PERCENT, next));
+    this._applySpeed();
+    this._emit();
+  }
+
+  /** @returns {number} Current playback speed as a percentage. */
+  get speedPercent() {
+    return this._speedPercent;
+  }
+
+  _applySpeed() {
+    const rate = this._speedPercent / 100;
+    this._video.defaultPlaybackRate = rate;
+    this._video.playbackRate = rate;
+  }
+
   _emit() {
     const clip = this._clips[this._index];
     this._onChange({
@@ -135,6 +209,7 @@ export class VideoManager {
       total: this._clips.length,
       playing: this._playing,
       muted: this._video.muted,
+      speedPercent: this._speedPercent,
     });
   }
 
