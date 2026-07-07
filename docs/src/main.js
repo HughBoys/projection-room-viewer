@@ -36,13 +36,13 @@ async function loadSettings() {
 // server (e.g. file://), where fetch() of a local JSON may be blocked.
 const DEFAULT_SETTINGS = {
   asset_directory: "./assets",
-  master_video_resolution: { width: 1920, height: 1080 },
+  master_video_resolution: { width: 3840, height: 1440 },
   mapping: {
-    left_wall: { top_left_x: 0, top_left_y: 170, width_pixels: 480, height_pixels: 250, rotation_degrees: 0.0 },
-    center_wall: { top_left_x: 480, top_left_y: 170, width_pixels: 480, height_pixels: 250, rotation_degrees: 0.0 },
-    right_wall: { top_left_x: 960, top_left_y: 170, width_pixels: 480, height_pixels: 250, rotation_degrees: 0.0 },
-    back_wall: { top_left_x: 1440, top_left_y: 170, width_pixels: 480, height_pixels: 250, rotation_degrees: 0.0 },
-    floor: { top_left_x: 480, top_left_y: 420, width_pixels: 480, height_pixels: 480, rotation_degrees: 0.0 },
+    left_wall: { top_left_x: 0, top_left_y: 0, width_pixels: 960, height_pixels: 480, rotation_degrees: 0.0 },
+    center_wall: { top_left_x: 960, top_left_y: 0, width_pixels: 960, height_pixels: 480, rotation_degrees: 0.0 },
+    right_wall: { top_left_x: 1920, top_left_y: 0, width_pixels: 960, height_pixels: 480, rotation_degrees: 0.0 },
+    back_wall: { top_left_x: 2880, top_left_y: 0, width_pixels: 960, height_pixels: 480, rotation_degrees: 0.0 },
+    floor: { top_left_x: 960, top_left_y: 480, width_pixels: 960, height_pixels: 960, rotation_degrees: 0.0 },
   },
 };
 
