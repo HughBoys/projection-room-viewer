@@ -79,8 +79,11 @@ async function init() {
   const overlay = new MappingOverlay(video.videoElement, settings);
 
   function updateStatus(state) {
-    if (typeof state.speedPercent === "number") {
+    if (speedMeter && typeof state.speedPercent === "number") {
       speedMeter.textContent = `${state.speedPercent}%`;
+    }
+    if (!statusEl) {
+      return;
     }
     if (!state.total) {
       statusEl.textContent = "No video loaded";
@@ -101,10 +104,16 @@ async function init() {
     video.setFiles(files);
     if (video.hasClips) {
       room.setTexture(video.texture);
-      startPanel.hidden = true;
-      startPanel.style.display = "none";
-      hud.hidden = false;
-      meters.hidden = false;
+      if (startPanel) {
+        startPanel.hidden = true;
+        startPanel.style.display = "none";
+      }
+      if (hud) {
+        hud.hidden = false;
+      }
+      if (meters) {
+        meters.hidden = false;
+      }
       canvas.style.cursor = "grab";
     }
   }
@@ -172,8 +181,10 @@ async function init() {
     fpsAccum += dt;
     if (fpsAccum >= 0.25) {
       fpsAccum = 0;
-      const vf = video.videoFps;
-      fpsMeter.textContent = vf > 0 ? `${Math.round(vf)} FPS` : "-- FPS";
+      if (fpsMeter) {
+        const vf = video.videoFps;
+        fpsMeter.textContent = vf > 0 ? `${Math.round(vf)} FPS` : "-- FPS";
+      }
     }
 
     requestAnimationFrame(animate);
