@@ -57,6 +57,33 @@
         text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
       }
 
+      /* --- Top-right meters (playback speed + FPS) -------------------- */
+      #meters {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 4;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        background: rgba(10, 12, 18, 0.72);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        pointer-events: none;
+      }
+      #speedMeter {
+        font-size: 18px;
+        font-weight: 650;
+        color: #b6ffcf;
+      }
+      #fpsMeter {
+        font-size: 13px;
+        color: #9aa0b4;
+      }
+
       /* --- Start / upload panel --------------------------------------- */
       #start {
         position: fixed;
@@ -150,9 +177,15 @@
         <strong>WASD</strong> walk &nbsp;·&nbsp; <strong>Drag L-Mouse</strong>
         look &nbsp;·&nbsp; <kbd>Space</kbd> play/pause &nbsp;·&nbsp;
         <kbd>&larr;</kbd>/<kbd>&rarr;</kbd> change video &nbsp;·&nbsp;
+        <kbd>&uarr;</kbd>/<kbd>&darr;</kbd> speed &nbsp;·&nbsp;
         <kbd>Enter</kbd> mapping overlay &nbsp;·&nbsp; <kbd>M</kbd> mute
       </div>
       <div id="status"></div>
+    </div>
+
+    <div id="meters" hidden>
+      <div id="speedMeter">100%</div>
+      <div id="fpsMeter">-- FPS</div>
     </div>
 
     <div id="start">
