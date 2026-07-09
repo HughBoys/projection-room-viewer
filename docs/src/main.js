@@ -7,8 +7,8 @@
  */
 
 import * as THREE from "three";
-import { buildRoom, EYE_HEIGHT_M } from "./room.js";
-import { VideoManager } from "./video.js";
+import { buildRoom } from "./room.js";
+import { MediaManager } from "./video.js";
 import { FirstPersonControls } from "./controls.js";
 import { MappingOverlay } from "./overlay.js";
 
@@ -75,8 +75,11 @@ async function init() {
   const room = buildRoom(scene, settings);
   const controls = new FirstPersonControls(camera, canvas);
 
-  const video = new VideoManager(updateStatus);
-  const overlay = new MappingOverlay(video.videoElement, settings);
+  const media = new MediaManager(updateStatus, (texture) =>
+    room.setTexture(texture),
+  );
+  media.setMasterResolution(room.masterWidth, room.masterHeight);
+  const overlay = new MappingOverlay(media, settings);
 
   function updateStatus(state) {
     if (speedMeter && typeof state.speedPercent === "number") {
@@ -86,7 +89,12 @@ async function init() {
       return;
     }
     if (!state.total) {
-      statusEl.textContent = "No video loaded";
+      statusEl.textContent = "No media loaded";
+      return;
+    }
+    if (state.kind === "image") {
+      statusEl.textContent =
+        `[${state.index + 1}/${state.total}] ${state.name} (image)`;
       return;
     }
     const play = state.playing ? "playing" : "paused";
@@ -101,9 +109,8 @@ async function init() {
     if (!files || files.length === 0) {
       return;
     }
-    video.setFiles(files);
-    if (video.hasClips) {
-      room.setTexture(video.texture);
+    media.setFiles(files);
+    if (media.hasClips) {
       if (startPanel) {
         startPanel.hidden = true;
         startPanel.style.display = "none";
@@ -133,28 +140,28 @@ async function init() {
     switch (e.key) {
       case " ":
         e.preventDefault();
-        video.togglePlay();
+        media.togglePlay();
         break;
       case "ArrowRight":
-        video.next();
+        media.next();
         break;
       case "ArrowLeft":
-        video.previous();
+        media.previous();
         break;
       case "ArrowUp":
         e.preventDefault();
-        video.changeSpeed(+1);
+        media.changeSpeed(+1);
         break;
       case "ArrowDown":
         e.preventDefault();
-        video.changeSpeed(-1);
+        media.changeSpeed(-1);
         break;
       case "Enter":
         overlay.toggle();
         break;
       case "m":
       case "M":
-        video.toggleMute();
+        media.toggleMute();
         break;
       default:
         break;
@@ -174,6 +181,7 @@ async function init() {
   function animate() {
     const dt = clock.getDelta();
     controls.update(dt);
+    media.update();
     overlay.render();
     renderer.render(scene, camera);
 
@@ -182,7 +190,7 @@ async function init() {
     if (fpsAccum >= 0.25) {
       fpsAccum = 0;
       if (fpsMeter) {
-        const vf = video.videoFps;
+        const vf = media.videoFps;
         fpsMeter.textContent = vf > 0 ? `${Math.round(vf)} FPS` : "-- FPS";
       }
     }

@@ -1,14 +1,23 @@
 # Projection Room Viewer — Web version
 
 A fully client-side, browser-based port of the Panda3D projection-mapping
-viewer. Walk through a five-wall + floor 3D room and see how a stitched `.mp4`
-maps onto each surface. Built with [three.js](https://threejs.org/) and the
-HTML5 File API.
+viewer. Walk through a five-wall + floor 3D room and see how a stitched video or
+image maps onto each surface. Built with [three.js](https://threejs.org/) and
+the HTML5 File API.
 
-**Your video never leaves your machine.** Files are read directly in the browser
+**Your media never leaves your machine.** Files are read directly in the browser
 via object URLs and rendered locally with WebGL — nothing is uploaded to any
 server. This makes it safe to host as a static site (e.g. GitHub Pages) while
 keeping all media local to each user.
+
+## Supported inputs
+
+- **Video:** `.mp4`, `.mov`, `.webm`, `.m4v`, `.ogv`
+- **Image:** `.png`, `.jpg`/`.jpeg`, `.webp`, `.avif`, `.bmp`
+- **Animated:** `.gif` (plays back automatically)
+
+All are treated as the stitched master frame and wrapped onto the walls using
+the same `settings.json` mapping.
 
 ## Controls
 
@@ -16,12 +25,26 @@ keeping all media local to each user.
 | --- | --- |
 | `W` `A` `S` `D` | Walk through the room |
 | Drag left mouse | Look around (yaw + pitch) |
-| `Space` | Play / pause |
-| `←` / `→` | Previous / next video |
-| `Enter` | Toggle the 2D mapping-inspection overlay |
+| `Space` | Play / pause (video) |
+| `←` / `→` | Previous / next media file |
+| `↑` / `↓` | Playback speed −/+ 1% |
+| `Enter` | Toggle the layout overlay + decal editor |
 | `M` | Mute / unmute audio |
 
-Select one or more videos from the start panel (or drag & drop anywhere).
+Select one or more files from the start panel (or drag & drop anywhere).
+
+## Layout overlay & PNG decals (`Enter`)
+
+Press `Enter` to open the layout view over the master frame:
+
+- **Scroll** to zoom toward the cursor; **drag** empty space to pan.
+- A top-left readout shows the cursor position in master-frame pixels.
+- **Add PNG…** (top-right) uploads overlay images ("decals"). Each decal can be
+  **dragged** to move, **corner-handle dragged** to scale, **top-handle dragged**
+  to rotate, and adjusted with **Scale / Rotation / Opacity** sliders. `Delete`
+  removes the selected decal.
+- Decals are baked into the master frame, so they map onto the walls and appear
+  over the top of the video in 3D.
 
 ## Run locally
 

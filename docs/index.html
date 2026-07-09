@@ -176,9 +176,9 @@
       <div id="help">
         <strong>WASD</strong> walk &nbsp;·&nbsp; <strong>Drag L-Mouse</strong>
         look &nbsp;·&nbsp; <kbd>Space</kbd> play/pause &nbsp;·&nbsp;
-        <kbd>&larr;</kbd>/<kbd>&rarr;</kbd> change video &nbsp;·&nbsp;
+        <kbd>&larr;</kbd>/<kbd>&rarr;</kbd> change media &nbsp;·&nbsp;
         <kbd>&uarr;</kbd>/<kbd>&darr;</kbd> speed &nbsp;·&nbsp;
-        <kbd>Enter</kbd> mapping overlay &nbsp;·&nbsp; <kbd>M</kbd> mute
+        <kbd>Enter</kbd> layout &amp; decals &nbsp;·&nbsp; <kbd>M</kbd> mute
       </div>
       <div id="status"></div>
     </div>
@@ -192,14 +192,16 @@
       <div class="card">
         <h1>Projection Room Viewer</h1>
         <p>
-          Load a stitched <code>.mp4</code> and walk through the 3D projection
-          room to see how it maps onto the five walls and floor. Select multiple
-          clips to page through them with the arrow keys.
+          Load a stitched video (<code>.mp4</code>, <code>.mov</code>,
+          <code>.webm</code>) or image (<code>.png</code>, <code>.jpg</code>,
+          <code>.gif</code>) and walk through the 3D projection room to see how
+          it maps onto the five walls and floor. Select multiple files to page
+          through them with the arrow keys.
         </p>
         <div class="picker">
-          <button class="btn" id="pickBtn">Choose video(s)&hellip;</button>
-          <input id="fileInput" type="file" accept="video/*" multiple />
-          <div class="hint">or drag &amp; drop a video anywhere on the page</div>
+          <button class="btn" id="pickBtn">Choose file(s)&hellip;</button>
+          <input id="fileInput" type="file" accept="video/*,image/*" multiple />
+          <div class="hint">or drag &amp; drop a video or image anywhere</div>
         </div>
         <div class="privacy">
           Your video never leaves this device. It is read directly in the
