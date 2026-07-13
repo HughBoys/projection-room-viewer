@@ -21,6 +21,12 @@ const fileInput = document.getElementById("fileInput");
 const meters = document.getElementById("meters");
 const speedMeter = document.getElementById("speedMeter");
 const fpsMeter = document.getElementById("fpsMeter");
+const transport = document.getElementById("transport");
+const transportToggle = document.getElementById("transportToggle");
+const playPauseBtn = document.getElementById("playPauseBtn");
+const stopBtn = document.getElementById("stopBtn");
+const playhead = document.getElementById("playhead");
+const timeReadout = document.getElementById("timeReadout");
 
 async function loadSettings() {
   try {
@@ -80,6 +86,47 @@ async function init() {
   );
   media.setMasterResolution(room.masterWidth, room.masterHeight);
   const overlay = new MappingOverlay(media, settings);
+  let scrubbing = false;
+
+  function formatTime(seconds) {
+    if (!Number.isFinite(seconds) || seconds < 0) {
+      return "00:00";
+    }
+    const whole = Math.floor(seconds);
+    const hours = Math.floor(whole / 3600);
+    const minutes = Math.floor((whole % 3600) / 60);
+    const secs = whole % 60;
+    const mm = String(minutes).padStart(hours > 0 ? 2 : 1, "0");
+    const ss = String(secs).padStart(2, "0");
+    return hours > 0
+      ? `${hours}:${mm}:${ss}`
+      : `${String(minutes).padStart(2, "0")}:${ss}`;
+  }
+
+  function updateTransport() {
+    if (!playhead || !playPauseBtn || !stopBtn || !timeReadout) {
+      return;
+    }
+    const enabled = media.isVideo && media.duration > 0;
+    playhead.disabled = !enabled;
+    playPauseBtn.disabled = !enabled;
+    stopBtn.disabled = !enabled;
+
+    const duration = enabled ? media.duration : 0;
+    const current = enabled ? media.currentTime : 0;
+    playhead.max = String(duration);
+    if (!scrubbing) {
+      playhead.value = String(current);
+    }
+    playPauseBtn.textContent = media.isPlaying ? "❚❚" : "▶";
+    playPauseBtn.setAttribute(
+      "aria-label",
+      media.isPlaying ? "Pause" : "Play",
+    );
+    const shownTime = scrubbing ? Number(playhead.value) : current;
+    timeReadout.textContent =
+      `${formatTime(shownTime)} / ${formatTime(duration)}`;
+  }
 
   function updateStatus(state) {
     if (speedMeter && typeof state.speedPercent === "number") {
@@ -121,12 +168,65 @@ async function init() {
       if (meters) {
         meters.hidden = false;
       }
+      if (transport) {
+        transport.hidden = false;
+      }
+      if (transportToggle) {
+        transportToggle.hidden = false;
+      }
       canvas.style.cursor = "grab";
     }
   }
 
   pickBtn.addEventListener("click", () => fileInput.click());
   fileInput.addEventListener("change", (e) => handleFiles(e.target.files));
+
+  if (playPauseBtn) {
+    playPauseBtn.addEventListener("click", () => media.togglePlay());
+  }
+  if (stopBtn) {
+    stopBtn.addEventListener("click", () => media.stop());
+  }
+  if (transport && transportToggle) {
+    transportToggle.addEventListener("click", () => {
+      const collapsed = transport.classList.toggle("transport-collapsed");
+      transportToggle.classList.toggle("controls-collapsed", collapsed);
+      if (hud) {
+        hud.classList.toggle("ui-collapsed", collapsed);
+      }
+      if (meters) {
+        meters.classList.toggle("ui-collapsed", collapsed);
+      }
+      transportToggle.textContent = collapsed ? "▲" : "▼";
+      transportToggle.setAttribute("aria-expanded", String(!collapsed));
+      transportToggle.setAttribute(
+        "aria-label",
+        collapsed ? "Show video controls" : "Hide video controls",
+      );
+      transportToggle.title = collapsed
+        ? "Show video controls"
+        : "Hide video controls";
+    });
+  }
+  if (playhead) {
+    playhead.addEventListener("pointerdown", () => {
+      scrubbing = true;
+    });
+    playhead.addEventListener("input", () => {
+      scrubbing = true;
+      media.seek(Number(playhead.value));
+      updateTransport();
+    });
+    const finishScrub = () => {
+      if (scrubbing) {
+        media.seek(Number(playhead.value));
+        scrubbing = false;
+      }
+    };
+    playhead.addEventListener("change", finishScrub);
+    playhead.addEventListener("pointerup", finishScrub);
+    playhead.addEventListener("pointercancel", finishScrub);
+  }
 
   // Drag & drop anywhere.
   window.addEventListener("dragover", (e) => e.preventDefault());
@@ -137,6 +237,9 @@ async function init() {
 
   // --- Playback / overlay key bindings ---------------------------------
   window.addEventListener("keydown", (e) => {
+    if (e.target instanceof Element && e.target.closest("#transport")) {
+      return;
+    }
     switch (e.key) {
       case " ":
         e.preventDefault();
@@ -184,6 +287,7 @@ async function init() {
     media.update();
     overlay.render();
     renderer.render(scene, camera);
+    updateTransport();
 
     // Show the video's effective playback frame rate (refreshed ~4x/second).
     fpsAccum += dt;

@@ -26,6 +26,8 @@ the same `settings.json` mapping.
 | `W` `A` `S` `D` | Walk through the room |
 | Drag left mouse | Look around (yaw + pitch) |
 | `Space` | Play / pause (video) |
+| Bottom playhead | Scrub or jump to a point in the video |
+| Bottom ■ button | Stop and return to the first frame |
 | `←` / `→` | Previous / next media file |
 | `↑` / `↓` | Playback speed −/+ 1% |
 | `Enter` | Toggle the layout overlay + decal editor |

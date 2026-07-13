@@ -140,6 +140,30 @@ export class MediaManager {
     return this._speedPercent;
   }
 
+  /** @returns {boolean} Whether the active item is a video. */
+  get isVideo() {
+    return Boolean(this._current && this._current.kind === "video");
+  }
+
+  /** @returns {boolean} Whether the active video is currently playing. */
+  get isPlaying() {
+    return this.isVideo && !this._video.paused;
+  }
+
+  /** @returns {number} Current video position in seconds. */
+  get currentTime() {
+    return this.isVideo && Number.isFinite(this._video.currentTime)
+      ? this._video.currentTime
+      : 0;
+  }
+
+  /** @returns {number} Active video duration in seconds. */
+  get duration() {
+    return this.isVideo && Number.isFinite(this._video.duration)
+      ? this._video.duration
+      : 0;
+  }
+
   /**
    * The element the layout overlay should draw to represent the current frame.
    * @returns {HTMLVideoElement|HTMLImageElement|HTMLCanvasElement}
@@ -277,6 +301,46 @@ export class MediaManager {
       this._playing = false;
     }
     this._emit();
+  }
+
+  /** Starts or resumes the active video. */
+  play() {
+    if (!this.isVideo) {
+      return;
+    }
+    const start = this._video.play();
+    if (start && typeof start.catch === "function") {
+      start.catch(() => {});
+    }
+    this._playing = true;
+    this._emit();
+  }
+
+  /** Pauses and returns the active video to its first frame. */
+  stop() {
+    if (!this.isVideo) {
+      return;
+    }
+    this._video.pause();
+    this._video.currentTime = 0;
+    this._playing = false;
+    this._lastComposedTime = -1;
+    this._decalsDirty = true;
+    this._emit();
+  }
+
+  /** Jumps to an absolute position in the active video. */
+  seek(seconds) {
+    if (!this.isVideo || !Number.isFinite(seconds)) {
+      return;
+    }
+    const duration = this.duration;
+    this._video.currentTime = Math.max(
+      0,
+      Math.min(duration > 0 ? duration : seconds, seconds),
+    );
+    this._lastComposedTime = -1;
+    this._decalsDirty = true;
   }
 
   toggleMute() {

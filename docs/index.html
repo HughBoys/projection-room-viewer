@@ -83,6 +83,86 @@
         font-size: 13px;
         color: #9aa0b4;
       }
+      .ui-collapsed {
+        display: none !important;
+      }
+
+      /* --- Bottom-centre transport controls --------------------------- */
+      #transport {
+        position: fixed;
+        left: 50%;
+        bottom: 18px;
+        z-index: 4;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: min(680px, calc(100vw - 32px));
+        padding: 10px 14px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        background: rgba(10, 12, 18, 0.82);
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.38);
+        backdrop-filter: blur(8px);
+      }
+      .transport-btn {
+        flex: 0 0 38px;
+        width: 38px;
+        height: 34px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 7px;
+        background: rgba(255, 255, 255, 0.09);
+        color: #fff;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      .transport-btn:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.16);
+      }
+      .transport-btn:disabled,
+      #playhead:disabled {
+        cursor: default;
+        opacity: 0.4;
+      }
+      #playhead {
+        min-width: 100px;
+        flex: 1 1 auto;
+        accent-color: #6f8cff;
+        cursor: pointer;
+      }
+      #timeReadout {
+        flex: 0 0 auto;
+        min-width: 104px;
+        color: #c7cad5;
+        font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+        text-align: right;
+      }
+      #transport.transport-collapsed {
+        display: none;
+      }
+      #transportToggle {
+        position: fixed;
+        left: 50%;
+        bottom: 76px;
+        z-index: 4;
+        transform: translateX(-50%);
+        width: 42px;
+        height: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 7px 7px 0 0;
+        background: rgba(10, 12, 18, 0.82);
+        color: #c7cad5;
+        cursor: pointer;
+        line-height: 20px;
+      }
+      #transportToggle:hover {
+        background: rgba(255, 255, 255, 0.14);
+        color: #fff;
+      }
+      #transportToggle.controls-collapsed {
+        bottom: 18px;
+        border-radius: 7px;
+      }
 
       /* --- Start / upload panel --------------------------------------- */
       #start {
@@ -187,6 +267,41 @@
       <div id="speedMeter">100%</div>
       <div id="fpsMeter">-- FPS</div>
     </div>
+
+    <div id="transport" hidden aria-label="Video playback controls">
+      <button
+        id="playPauseBtn"
+        class="transport-btn"
+        type="button"
+        aria-label="Play"
+        title="Play / pause (Space)"
+      >▶</button>
+      <button
+        id="stopBtn"
+        class="transport-btn"
+        type="button"
+        aria-label="Stop"
+        title="Stop and return to start"
+      >■</button>
+      <input
+        id="playhead"
+        type="range"
+        min="0"
+        max="0"
+        step="0.01"
+        value="0"
+        aria-label="Video playhead"
+      />
+      <output id="timeReadout" for="playhead">00:00 / 00:00</output>
+    </div>
+    <button
+      id="transportToggle"
+      type="button"
+      hidden
+      aria-label="Hide video controls"
+      aria-expanded="true"
+      title="Hide video controls"
+    >▼</button>
 
     <div id="start">
       <div class="card">
