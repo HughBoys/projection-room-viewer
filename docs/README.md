@@ -1,3 +1,5 @@
+https://hughboys.github.io/projection-room-viewer/
+
 # Projection Room Viewer — Web version
 
 A fully client-side, browser-based port of the Panda3D projection-mapping
@@ -94,3 +96,4 @@ docs/
 │   └── overlay.js   # 2D mapping-inspection overlay
 └── README.md
 ```
+
