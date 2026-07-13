@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "coordinate_system": "three.js_y_up",
+  "units": "meters",
+  "exhibit": {
+    "position": {
+      "x": 3.073,
+      "y": -0.48,
+      "z": 10.28
+    },
+    "rotation": {
+      "order": "YXZ",
+      "x_degrees": -90,
+      "y_degrees": 450,
+      "z_degrees": 0
+    },
+    "scale": {
+      "x": 1,
+      "y": 1,
+      "z": 1
+    }
+  }
+}

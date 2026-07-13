@@ -1,11 +1,10 @@
-https://hughboys.github.io/projection-room-viewer/
-
 # Projection Room Viewer — Web version
 
 A fully client-side, browser-based port of the Panda3D projection-mapping
 viewer. Walk through a five-wall + floor 3D room and see how a stitched video or
-image maps onto each surface. Built with [three.js](https://threejs.org/) and
-the HTML5 File API.
+image maps onto each surface. A local GLB model can be shown around the room as
+the rest of the exhibit. Built with [three.js](https://threejs.org/) and the
+HTML5 File API.
 
 **Your media never leaves your machine.** Files are read directly in the browser
 via object URLs and rendered locally with WebGL — nothing is uploaded to any
@@ -17,9 +16,10 @@ keeping all media local to each user.
 - **Video:** `.mp4`, `.mov`, `.webm`, `.m4v`, `.ogv`
 - **Image:** `.png`, `.jpg`/`.jpeg`, `.webp`, `.avif`, `.bmp`
 - **Animated:** `.gif` (plays back automatically)
+- **Exhibit:** `.glb`
 
-All are treated as the stitched master frame and wrapped onto the walls using
-the same `settings.json` mapping.
+Videos and images are treated as the stitched master frame and wrapped onto the
+walls using the same `settings.json` mapping.
 
 ## Controls
 
@@ -33,9 +33,55 @@ the same `settings.json` mapping.
 | `←` / `→` | Previous / next media file |
 | `↑` / `↓` | Playback speed −/+ 1% |
 | `Enter` | Toggle the layout overlay + decal editor |
+| `C` | Toggle GLB calibration mode |
 | `M` | Mute / unmute audio |
 
 Select one or more files from the start panel (or drag & drop anywhere).
+
+## GLB exhibit and transform
+
+Choose a `.glb` alongside the projection media, or drag it onto the viewer
+later. The model is rendered with its original glTF materials and textures
+under global ambient lighting. Movement is unrestricted and neither the
+projection room nor the exhibit adds collision geometry, so all walls can be
+walked through for now.
+
+The viewer always loads placement from the bundled
+`docs/transform.json`. Edit that file to fit the exhibit model around the
+projection room:
+
+```json
+{
+  "schema_version": 1,
+  "coordinate_system": "three.js_y_up",
+  "units": "meters",
+  "exhibit": {
+    "position": { "x": 0, "y": 0, "z": 0 },
+    "rotation": {
+      "order": "YXZ",
+      "x_degrees": 0,
+      "y_degrees": 0,
+      "z_degrees": 0
+    },
+    "scale": { "x": 1, "y": 1, "z": 1 }
+  }
+}
+```
+
+Positions and scale use metres. The room floor is `y = 0`, its centre is
+`(0, 0, 0)`, and rotations are in degrees.
+
+### Calibration mode (`C`)
+
+After loading a GLB, press `C` to open calibration mode. The panel can rotate
+the model by ±90° on each axis and change its X/Y/Z offset in metres. Changes
+are visible immediately.
+
+**Save calibration** opens the browser's file-save picker when direct file
+writing is supported. Select the bundled `docs/transform.json` to overwrite it.
+If direct writing is unsupported or permission is denied, the viewer downloads
+a replacement file named `transform.json`; copy it into `docs/` before the next
+run or deployment.
 
 ## Layout overlay & PNG decals (`Enter`)
 
@@ -86,14 +132,16 @@ sliced onto `left_wall`, `center_wall`, `right_wall`, `back_wall`, and `floor`.
 
 ```text
 docs/
-├── index.html      # UI, styles, three.js import map
-├── settings.json   # room mapping (same schema as the Python version)
+├── index.html                 # UI, styles, three.js import map
+├── settings.json              # room mapping
+├── transform.json             # GLB placement relative to the room
 ├── src/
-│   ├── main.js      # bootstrap + render loop
-│   ├── room.js      # geometry + pixel-crop → UV mapping
-│   ├── controls.js  # WASD + drag-look, wall clamping
-│   ├── video.js     # File API → <video> → VideoTexture
-│   └── overlay.js   # 2D mapping-inspection overlay
+│   ├── main.js                 # bootstrap + render loop
+│   ├── exhibit.js              # GLB loading, transform, cleanup
+│   ├── calibration.js          # model calibration UI + transform saving
+│   ├── room.js                 # geometry + pixel-crop → UV mapping
+│   ├── controls.js             # unrestricted WASD + drag-look
+│   ├── video.js                # File API → <video> → VideoTexture
+│   └── overlay.js              # 2D mapping-inspection overlay
 └── README.md
 ```
-

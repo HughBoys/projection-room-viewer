@@ -1,18 +1,14 @@
 /**
- * First-person controls: left-drag mouse-look + WASD walking, clamped to the
- * room bounds. Ports the camera behaviour from the Panda3D viewer.
+ * First-person controls: left-drag mouse-look + unrestricted WASD walking.
+ * Room and exhibit meshes are visual only and do not create collisions.
  */
 
 import * as THREE from "three";
-import { EYE_HEIGHT_M, ROOM_WIDTH_M, ROOM_DEPTH_M } from "./room.js";
+import { EYE_HEIGHT_M } from "./room.js";
 
 const MOVE_SPEED_MPS = 3.0;
 const LOOK_SENSITIVITY = 0.0026; // Radians per pixel of drag.
 const PITCH_LIMIT = THREE.MathUtils.degToRad(89.0);
-const WALL_MARGIN_M = 0.15;
-
-const HALF_W = ROOM_WIDTH_M / 2.0;
-const HALF_D = ROOM_DEPTH_M / 2.0;
 
 export class FirstPersonControls {
   /**
@@ -28,6 +24,7 @@ export class FirstPersonControls {
     this._dragging = false;
     this._lastX = 0;
     this._lastY = 0;
+    this._enabled = true;
 
     this._keys = { w: false, a: false, s: false, d: false };
 
@@ -49,7 +46,7 @@ export class FirstPersonControls {
   }
 
   _onDown = (e) => {
-    if (e.button !== 0) {
+    if (!this._enabled || e.button !== 0) {
       return;
     }
     this._dragging = true;
@@ -64,7 +61,7 @@ export class FirstPersonControls {
   };
 
   _onMove = (e) => {
-    if (!this._dragging) {
+    if (!this._enabled || !this._dragging) {
       return;
     }
     const dx = e.clientX - this._lastX;
@@ -81,12 +78,25 @@ export class FirstPersonControls {
   _onKey = (e) => {
     const key = e.key.toLowerCase();
     if (key in this._keys) {
-      this._keys[key] = e.type === "keydown";
+      this._keys[key] = this._enabled && e.type === "keydown";
     }
   };
 
   _applyRotation() {
     this._camera.rotation.set(this._pitch, this._yaw, 0, "YXZ");
+  }
+
+  setEnabled(enabled) {
+    this._enabled = Boolean(enabled);
+    if (!this._enabled) {
+      this._dragging = false;
+      for (const key of Object.keys(this._keys)) {
+        this._keys[key] = false;
+      }
+      this._dom.style.cursor = "default";
+    } else {
+      this._dom.style.cursor = "grab";
+    }
   }
 
   /**
@@ -95,6 +105,9 @@ export class FirstPersonControls {
    * @param {number} dt Elapsed seconds since the previous frame.
    */
   update(dt) {
+    if (!this._enabled) {
+      return;
+    }
     const forwardInput =
       (this._keys.w ? 1 : 0) - (this._keys.s ? 1 : 0);
     const strafeInput = (this._keys.d ? 1 : 0) - (this._keys.a ? 1 : 0);
@@ -117,10 +130,8 @@ export class FirstPersonControls {
     motion.multiplyScalar(MOVE_SPEED_MPS * dt);
 
     const pos = this._camera.position;
-    const limitX = HALF_W - WALL_MARGIN_M;
-    const limitZ = HALF_D - WALL_MARGIN_M;
-    pos.x = Math.max(-limitX, Math.min(limitX, pos.x + motion.x));
-    pos.z = Math.max(-limitZ, Math.min(limitZ, pos.z + motion.z));
+    pos.x += motion.x;
+    pos.z += motion.z;
     pos.y = EYE_HEIGHT_M;
   }
 }

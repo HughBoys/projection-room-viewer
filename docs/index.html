@@ -56,6 +56,11 @@
         color: #b6ffcf;
         text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
       }
+      #exhibitStatus {
+        font-size: 14px;
+        color: #a9c7ff;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+      }
 
       /* --- Top-right meters (playback speed + FPS) -------------------- */
       #meters {
@@ -164,6 +169,91 @@
         border-radius: 7px;
       }
 
+      /* --- GLB calibration panel -------------------------------------- */
+      #calibrationPanel {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 8;
+        width: min(360px, calc(100vw - 32px));
+        padding: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 12px;
+        background: rgba(10, 12, 18, 0.94);
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(8px);
+      }
+      #calibrationPanel[hidden] {
+        display: none;
+      }
+      #calibrationPanel h2 {
+        margin: 0 0 6px;
+        font-size: 18px;
+      }
+      #calibrationPanel p {
+        margin: 0 0 14px;
+        color: #9aa0b4;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+      .calibration-row {
+        display: grid;
+        grid-template-columns: 58px 1fr 1fr;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .calibration-row label {
+        color: #c7cad5;
+        font-size: 13px;
+      }
+      .calibration-row button,
+      .calibration-actions button {
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 7px;
+        padding: 8px;
+        background: rgba(255, 255, 255, 0.09);
+        color: #fff;
+        cursor: pointer;
+      }
+      .calibration-row button:hover,
+      .calibration-actions button:hover {
+        background: rgba(255, 255, 255, 0.16);
+      }
+      .calibration-offsets {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin: 14px 0;
+      }
+      .calibration-offsets label {
+        color: #c7cad5;
+        font-size: 12px;
+      }
+      .calibration-offsets input {
+        width: 100%;
+        margin-top: 4px;
+        padding: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 6px;
+        background: #151821;
+        color: #fff;
+      }
+      .calibration-actions {
+        display: flex;
+        gap: 8px;
+      }
+      #calibrationSave {
+        flex: 1;
+        background: #4661e6;
+      }
+      #calibrationStatus {
+        min-height: 18px;
+        margin-top: 12px;
+        color: #b6ffcf;
+        font-size: 12px;
+      }
+
       /* --- Start / upload panel --------------------------------------- */
       #start {
         position: fixed;
@@ -244,7 +334,8 @@
     <script type="importmap">
       {
         "imports": {
-          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
         }
       }
     </script>
@@ -258,9 +349,13 @@
         look &nbsp;·&nbsp; <kbd>Space</kbd> play/pause &nbsp;·&nbsp;
         <kbd>&larr;</kbd>/<kbd>&rarr;</kbd> change media &nbsp;·&nbsp;
         <kbd>&uarr;</kbd>/<kbd>&darr;</kbd> speed &nbsp;·&nbsp;
-        <kbd>Enter</kbd> layout &amp; decals &nbsp;·&nbsp; <kbd>M</kbd> mute
+        <kbd>Enter</kbd> layout &amp; decals &nbsp;·&nbsp;
+        <kbd>C</kbd> calibrate model &nbsp;·&nbsp; <kbd>M</kbd> mute
       </div>
-      <div id="status"></div>
+      <div>
+        <div id="status"></div>
+        <div id="exhibitStatus"></div>
+      </div>
     </div>
 
     <div id="meters" hidden>
@@ -303,6 +398,45 @@
       title="Hide video controls"
     >▼</button>
 
+    <section id="calibrationPanel" aria-label="Model calibration" hidden>
+      <h2>Model calibration</h2>
+      <p>
+        Rotate in 90° steps or enter the model offset in metres. Press
+        <kbd>C</kbd> to close.
+      </p>
+      <div class="calibration-row">
+        <label>X axis</label>
+        <button type="button" data-rotate-axis="x" data-degrees="-90">−90°</button>
+        <button type="button" data-rotate-axis="x" data-degrees="90">+90°</button>
+      </div>
+      <div class="calibration-row">
+        <label>Y axis</label>
+        <button type="button" data-rotate-axis="y" data-degrees="-90">−90°</button>
+        <button type="button" data-rotate-axis="y" data-degrees="90">+90°</button>
+      </div>
+      <div class="calibration-row">
+        <label>Z axis</label>
+        <button type="button" data-rotate-axis="z" data-degrees="-90">−90°</button>
+        <button type="button" data-rotate-axis="z" data-degrees="90">+90°</button>
+      </div>
+      <div class="calibration-offsets">
+        <label>X offset
+          <input type="number" step="0.01" data-offset-axis="x" />
+        </label>
+        <label>Y offset
+          <input type="number" step="0.01" data-offset-axis="y" />
+        </label>
+        <label>Z offset
+          <input type="number" step="0.01" data-offset-axis="z" />
+        </label>
+      </div>
+      <div class="calibration-actions">
+        <button id="calibrationSave" type="button">Save calibration</button>
+        <button id="calibrationClose" type="button">Close</button>
+      </div>
+      <div id="calibrationStatus" role="status"></div>
+    </section>
+
     <div id="start">
       <div class="card">
         <h1>Projection Room Viewer</h1>
@@ -310,18 +444,26 @@
           Load a stitched video (<code>.mp4</code>, <code>.mov</code>,
           <code>.webm</code>) or image (<code>.png</code>, <code>.jpg</code>,
           <code>.gif</code>) and walk through the 3D projection room to see how
-          it maps onto the five walls and floor. Select multiple files to page
-          through them with the arrow keys.
+          it maps onto the five walls and floor. You can also load a
+          <code>.glb</code> exhibit. Select the files together or drag them
+          onto the viewer.
         </p>
         <div class="picker">
           <button class="btn" id="pickBtn">Choose file(s)&hellip;</button>
-          <input id="fileInput" type="file" accept="video/*,image/*" multiple />
-          <div class="hint">or drag &amp; drop a video or image anywhere</div>
+          <input
+            id="fileInput"
+            type="file"
+            accept="video/*,image/*,.glb,model/gltf-binary"
+            multiple
+          />
+          <div class="hint">
+            video/image + optional GLB exhibit
+          </div>
         </div>
         <div class="privacy">
-          Your video never leaves this device. It is read directly in the
-          browser (HTML5 File API) and rendered locally with WebGL — nothing is
-          uploaded to any server.
+          Your files never leave this device. They are read directly in the
+          browser (HTML5 File API) and rendered locally with WebGL — nothing
+          is uploaded to any server.
         </div>
       </div>
     </div>

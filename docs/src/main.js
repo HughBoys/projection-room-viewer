@@ -11,10 +11,16 @@ import { buildRoom } from "./room.js";
 import { MediaManager } from "./video.js";
 import { FirstPersonControls } from "./controls.js";
 import { MappingOverlay } from "./overlay.js";
+import { CalibrationController } from "./calibration.js";
+import {
+  ExhibitManager,
+  loadDefaultTransform,
+} from "./exhibit.js";
 
 const canvas = document.getElementById("canvas");
 const hud = document.getElementById("hud");
 const statusEl = document.getElementById("status");
+const exhibitStatusEl = document.getElementById("exhibitStatus");
 const startPanel = document.getElementById("start");
 const pickBtn = document.getElementById("pickBtn");
 const fileInput = document.getElementById("fileInput");
@@ -56,7 +62,10 @@ const DEFAULT_SETTINGS = {
 };
 
 async function init() {
-  const settings = await loadSettings();
+  const [settings, defaultExhibitTransform] = await Promise.all([
+    loadSettings(),
+    loadDefaultTransform(),
+  ]);
 
   // --- Renderer / scene / camera ---------------------------------------
   const renderer = new THREE.WebGLRenderer({
@@ -70,6 +79,7 @@ async function init() {
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0d0d12);
+  scene.add(new THREE.AmbientLight(0xffffff, 2.0));
 
   const camera = new THREE.PerspectiveCamera(
     70,
@@ -80,6 +90,10 @@ async function init() {
 
   const room = buildRoom(scene, settings);
   const controls = new FirstPersonControls(camera, canvas);
+  const exhibit = new ExhibitManager(scene, updateExhibitStatus);
+  const calibration = new CalibrationController(exhibit, (visible) =>
+    controls.setEnabled(!visible),
+  );
 
   const media = new MediaManager(updateStatus, (texture) =>
     room.setTexture(texture),
@@ -152,29 +166,63 @@ async function init() {
   updateStatus({ total: 0 });
 
   // --- File loading (File API; nothing is uploaded) --------------------
-  function handleFiles(files) {
+  function showViewer() {
+    if (startPanel) {
+      startPanel.hidden = true;
+      startPanel.style.display = "none";
+    }
+    if (hud) {
+      hud.hidden = false;
+    }
+    if (meters) {
+      meters.hidden = false;
+    }
+    if (transport) {
+      transport.hidden = false;
+    }
+    if (transportToggle) {
+      transportToggle.hidden = false;
+    }
+    canvas.style.cursor = "grab";
+  }
+
+  function updateExhibitStatus(state) {
+    if (!exhibitStatusEl) {
+      return;
+    }
+    if (state.state === "loading") {
+      exhibitStatusEl.textContent = `Loading exhibit: ${state.name}…`;
+    } else if (state.state === "ready") {
+      exhibitStatusEl.textContent = `Exhibit: ${state.name}`;
+    } else if (state.state === "error") {
+      exhibitStatusEl.textContent =
+        `Could not load ${state.name}: ${state.message}`;
+    }
+  }
+
+  async function handleFiles(files) {
     if (!files || files.length === 0) {
       return;
     }
-    media.setFiles(files);
+
+    const selected = Array.from(files);
+    const glbFile = selected.find(
+      (file) =>
+        file.type === "model/gltf-binary" || /\.glb$/i.test(file.name),
+    );
+
+    media.setFiles(selected);
     if (media.hasClips) {
-      if (startPanel) {
-        startPanel.hidden = true;
-        startPanel.style.display = "none";
+      showViewer();
+    }
+
+    if (glbFile) {
+      showViewer();
+      try {
+        await exhibit.load(glbFile, defaultExhibitTransform);
+      } catch (error) {
+        console.error("Unable to load exhibit GLB:", error);
       }
-      if (hud) {
-        hud.hidden = false;
-      }
-      if (meters) {
-        meters.hidden = false;
-      }
-      if (transport) {
-        transport.hidden = false;
-      }
-      if (transportToggle) {
-        transportToggle.hidden = false;
-      }
-      canvas.style.cursor = "grab";
     }
   }
 
@@ -237,8 +285,16 @@ async function init() {
 
   // --- Playback / overlay key bindings ---------------------------------
   window.addEventListener("keydown", (e) => {
-    if (e.target instanceof Element && e.target.closest("#transport")) {
-      return;
+    if (e.target instanceof Element) {
+      if (e.target.closest("#transport")) {
+        return;
+      }
+      if (
+        e.target.closest("#calibrationPanel") &&
+        e.key.toLowerCase() !== "c"
+      ) {
+        return;
+      }
     }
     switch (e.key) {
       case " ":
@@ -265,6 +321,12 @@ async function init() {
       case "m":
       case "M":
         media.toggleMute();
+        break;
+      case "c":
+      case "C":
+        if (!e.repeat) {
+          calibration.toggle();
+        }
         break;
       default:
         break;
